@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Calculadora de UGP</title>
+        <!-- Incluir Font Awesome CSS local -->
+        <link rel="stylesheet" href="/fontawesome/css/all.min.css">
+        <link rel="stylesheet" href="styles.css"> <!-- Tu archivo CSS personalizado -->
+    </head>
+<body>
+    <div class="container">
+        <div class="config" onclick="toggleConfigMenu()">
+            <i class="fas fa-cog"></i>
+        </div>
+
+        <h1>Calculadora de UGP</h1>
+        
+        <label for="nombre">Nombre de la comida:</label>
+        <input type="text" id="nombre">
+        
+        <label for="cantidad">Cantidad de alimento (gramos):</label>
+        <input type="number" id="cantidad" min="0">
+        
+        <label for="proteinas">Proteínas (g/100g):</label>
+        <input type="number" id="proteinas" min="0">
+
+        <label for="grasas">Grasas (g/100g):</label>
+        <input type="number" id="grasas" min="0">
+
+        <label for="hidratos">Hidratos de carbono (g/100g):</label>
+        <input type="number" id="hidratos" min="0">
+
+        <label for="ratio">Ratio de insulina:</label>
+        <select id="ratio">
+            <option value="3.9">Desayuno-Almuerzo (6:00-17:29) Ratio 3.9</option>
+            <option value="4.4">Merienda (17:30-19:59) Ratio 4.4</option>
+            <option value="4.5">Cena (20:00-5:59) Ratio 4.5</option>
+        </select>
+
+        <button onclick="calcularUGP()">Calcular UGP y Insulina</button>
+
+        <div id="resultado" class="result"></div>
+
+        <h2>Registros</h2>
+        <div id="registros"></div>
+
+        <div class="config-menu" id="configMenu">
+            <h3>Configuración de Ratios</h3>
+            <label for="nombre39">Nombre para Desayuno-Almuerzo:</label>
+            <input type="text" id="nombre39" value="Desayuno-Almuerzo">
+            <label for="inicio39">Inicio:</label>
+            <input type="time" id="inicio39" value="06:00">
+            <label for="fin39">Fin:</label>
+            <input type="time" id="fin39" value="17:29">
+            <label for="ratio39">Ratio:</label>
+            <input type="number" id="ratio39" min="0" step="0.1" value="3.9">
+            
+            <label for="nombre44">Nombre para Merienda:</label>
+            <input type="text" id="nombre44" value="Merienda">
+            <label for="inicio44">Inicio:</label>
+            <input type="time" id="inicio44" value="17:30">
+            <label for="fin44">Fin:</label>
+            <input type="time" id="fin44" value="19:59">
+            <label for="ratio44">Ratio:</label>
+            <input type="number" id="ratio44" min="0" step="0.1" value="4.4">
+            
+            <label for="nombre45">Nombre para Cena:</label>
+            <input type="text" id="nombre45" value="Cena">
+            <label for="inicio45">Inicio:</label>
+            <input type="time" id="inicio45" value="20:00">
+            <label for="fin45">Fin:</label>
+            <input type="time" id="fin45" value="05:59">
+            <label for="ratio45">Ratio:</label>
+            <input type="number" id="ratio45" min="0" step="0.1" value="4.5">
+
+            <button onclick="guardarConfigRatios()">Guardar</button>
+        </div>
+    </div>
+
+    <script src="functions.js"></script>
+</body>
+</html>
