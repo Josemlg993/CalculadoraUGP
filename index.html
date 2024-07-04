@@ -4,9 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de UGP</title>
-    <!-- Incluir Font Awesome CSS local -->
-    <link rel="stylesheet" href="/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="styles.css"> <!-- Tu archivo CSS personalizado -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result, .record {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .record {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .record:hover {
+            background-color: #e0e0e0;
+        }
+        .record .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .actions i {
+            cursor: pointer;
+        }
+        .actions i:hover {
+            color: #007BFF;
+        }
+        .confirmacion {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .confirmacion .si, .confirmacion .no {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .confirmacion .si {
+            background-color: green;
+            color: white;
+        }
+        .confirmacion .no {
+            background-color: red;
+            color: white;
+        }
+        .config {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+        .config i {
+            font-size: 24px;
+            color: #007BFF;
+        }
+        .config i:hover {
+            color: #0056b3;
+        }
+        .config-menu {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            background-color: #fff;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            display: none;
+            padding: 10px;
+            z-index: 1000;
+        }
+        .config-menu h3 {
+            margin-top: 0;
+        }
+        .config-menu label {
+            display: block;
+            margin-top: 5px;
+        }
+        .config-menu input[type="text"], .config-menu input[type="number"], .config-menu select {
+            width: calc(100% - 22px);
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .config-menu button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .config-menu button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -27,7 +155,7 @@
         <label for="hidratos">Hidratos de carbono (g/100g):</label>
         <input type="number" id="hidratos" min="0">
 
-        <button onclick="calcularUGP()">Calcular UGP</button>
+        <button onclick="calcularUGP()">Calcular UGP y Insulina</button>
 
         <div id="resultado" class="result"></div>
 
@@ -35,6 +163,143 @@
         <div id="registros"></div>
     </div>
 
-    <script src="functions.js"></script>
+    <script>
+        let registros = [];
+
+        function calcularUGP() {
+            const nombre = document.getElementById('nombre').value;
+            const cantidad = parseFloat(document.getElementById('cantidad').value);
+            const proteinas = parseFloat(document.getElementById('proteinas').value);
+            const grasas = parseFloat(document.getElementById('grasas').value);
+            const hidratos = parseFloat(document.getElementById('hidratos').value);
+
+            if (!nombre || isNaN(cantidad) || isNaN(proteinas) || isNaN(grasas) || isNaN(hidratos)) {
+                alert("Por favor, ingrese valores válidos en todos los campos.");
+                return;
+            }
+
+            const proteinaTotal = (proteinas * cantidad) / 100;
+            const grasaTotal = (grasas * cantidad) / 100;
+            const hidratoTotal = (hidratos * cantidad) / 100;
+
+            const kcalProteinas = proteinaTotal * 4;
+            const kcalGrasas = grasaTotal * 9;
+
+            const ugpProteinas = kcalProteinas / 150;
+            const ugpGrasas = kcalGrasas / 150;
+            const totalUGP = ugpProteinas + ugpGrasas;
+
+            const racionesHC = hidratoTotal / 10;
+            const insulinaHC = racionesHC * 1; // Using 1 as the ratio
+
+            const resultadoHTML = `
+                <p><strong>Total UGP:</strong> ${totalUGP.toFixed(2)} UGP</p>
+                <p><strong>Insulina necesaria para hidratos de carbono:</strong> ${insulinaHC.toFixed(2)} UI</p>
+                <p><strong>Total de insulina necesaria:</strong> ${insulinaHC.toFixed(2)} UI</p>
+            `;
+            document.getElementById('resultado').innerHTML = resultadoHTML;
+
+            const registro = {
+                nombre,
+                cantidad,
+                proteinas,
+                grasas,
+                hidratos,
+                proteinaTotal,
+                grasaTotal,
+                hidratoTotal,
+                resultadoHTML
+            };
+
+            registros.push(registro);
+            guardarRegistros();
+            actualizarRegistros();
+        }
+
+        function guardarRegistros() {
+            localStorage.setItem('registros', JSON.stringify(registros));
+        }
+
+        function cargarRegistros() {
+            const registrosGuardados = JSON.parse(localStorage.getItem('registros'));
+            if (registrosGuardados) {
+                registros = registrosGuardados;
+                actualizarRegistros();
+            }
+        }
+
+        function actualizarRegistros() {
+            const registrosDiv = document.getElementById('registros');
+            registrosDiv.innerHTML = '';
+            registros.forEach((registro, index) => {
+                const registroDiv = document.createElement('div');
+                registroDiv.className = 'record';
+                registroDiv.innerHTML = `
+                    <span onclick="mostrarDetalles(${index})"><strong>${registro.nombre}</strong></span>
+                    <div class="actions">
+                        <i class="fas fa-cog" onclick="modificarRegistro(event, ${index})"></i>
+                        <i class="fas fa-times" onclick="confirmarBorrado(event, ${index})"></i>
+                    </div>
+                `;
+                registrosDiv.appendChild(registroDiv);
+            });
+        }
+
+        function mostrarDetalles(index) {
+            const registro = registros[index];
+            const detalleHTML = `
+                <p><strong>Nombre:</strong> ${registro.nombre}</p>
+                <p><strong>Cantidad:</strong> ${registro.cantidad} g</p>
+                <p><strong>Proteínas:</strong> ${registro.proteinas} g/100g</p>
+                <p><strong>Grasas:</strong> ${registro.grasas} g/100g</p>
+                <p><strong>Hidratos de carbono:</strong> ${registro.hidratos} g/100g</p>
+                <p><strong>Proteínas totales:</strong> ${registro.proteinaTotal.toFixed(2)} g</p>
+                <p><strong>Grasas totales:</strong> ${registro.grasaTotal.toFixed(2)} g</p>
+                <p><strong>Hidratos de carbono totales:</strong> ${registro.hidratoTotal.toFixed(2)} g</p>
+                ${registro.resultadoHTML}
+            `;
+            document.getElementById('resultado').innerHTML = detalleHTML;
+        }
+
+        function modificarRegistro(event, index) {
+            event.stopPropagation();
+            const registro = registros[index];
+            document.getElementById('nombre').value = registro.nombre;
+            document.getElementById('cantidad').value = registro.cantidad;
+            document.getElementById('proteinas').value = registro.proteinas;
+            document.getElementById('grasas').value = registro.grasas;
+            document.getElementById('hidratos').value = registro.hidratos;
+        }
+
+        function confirmarBorrado(event, index) {
+            event.stopPropagation();
+            const registroDiv = event.target.parentNode.parentNode;
+            const confirmacionDiv = document.createElement('div');
+            confirmacionDiv.className = 'confirmacion';
+            confirmacionDiv.innerHTML = `
+                <span>¿Estás seguro que quieres borrar?</span>
+                <span class="si" onclick="borrarRegistro(${index})"><i class="fas fa-check"></i> Sí</span>
+                <span class="no" onclick="cancelarBorrado(event)"><i class="fas fa-times"></i> No</span>
+            `;
+            registroDiv.appendChild(confirmacionDiv);
+        }
+
+        function cancelarBorrado(event) {
+            event.stopPropagation();
+            const confirmacionDiv = event.target.parentNode;
+            confirmacionDiv.parentNode.removeChild(confirmacionDiv);
+        }
+
+        function borrarRegistro(index) {
+            registros.splice(index, 1);
+            guardarRegistros();
+            actualizarRegistros();
+        }
+
+        // Cargar registros al iniciar la página
+        document.addEventListener('DOMContentLoaded', (event) => {
+            cargarRegistros();
+        });
+    </script>
 </body>
 </html>
