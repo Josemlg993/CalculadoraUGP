@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de UGP</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Calculadora de UGP</h1>
+
+        <label for="nombre">Nombre de la comida:</label>
+        <input type="text" id="nombre">
+
+        <label for="cantidad">Cantidad de alimento (gramos):</label>
+        <input type="number" id="cantidad" min="0">
+
+        <label for="proteinas">Proteínas (g/100g):</label>
+        <input type="number" id="proteinas" min="0">
+
+        <label for="grasas">Grasas (g/100g):</label>
+        <input type="number" id="grasas" min="0">
+
+        <label for="hidratos">Hidratos de carbono (g/100g):</label>
+        <input type="number" id="hidratos" min="0">
+
+        <button onclick="calcularUGP()">Calcular UGP y Insulina</button>
+
+        <div id="resultado" class="result"></div>
+
+        <h2>Registros</h2>
+        <div id="registros"></div>
+
+        <div id="detallesRegistro" style="display:none;">
+            <h3>Detalles del Registro</h3>
+            <p id="detalleNombre"></p>
+            <p id="detalleCantidad"></p>
+            <p id="detalleProteinas"></p>
+            <p id="detalleGrasas"></p>
+            <p id="detalleHidratos"></p>
+            <p id="detalleUGP"></p>
+        </div>
+    </div>
+
+    <script>
+        let registros = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarRegistros();
+        });
+
+        function calcularUGP() {
+            const nombre = document.getElementById('nombre').value;
+            const cantidad = parseFloat(document.getElementById('cantidad').value);
+            const proteinas = parseFloat(document.getElementById('proteinas').value);
+            const grasas = parseFloat(document.getElementById('grasas').value);
+            const hidratos = parseFloat(document.getElementById('hidratos').value);
+
+            // Calcular las cantidades específicas en base a la cantidad total del alimento
+            const totalProteinas = (proteinas * cantidad) / 100;
+            const totalGrasas = (grasas * cantidad) / 100;
+            const totalHidratos = (hidratos * cantidad) / 100;
+
+            // Calcular calorías y UGP
+            const caloriasProteinas = totalProteinas * 4;
+            const caloriasGrasas = totalGrasas * 9;
+            const totalCalorias = caloriasProteinas + caloriasGrasas;
+            const ugp = totalCalorias / 150;
+
+            const resultadoDiv = document.getElementById('resultado');
+            resultadoDiv.innerHTML = `
+                <h3>Resultado</h3>
+                <p>UGP: ${ugp.toFixed(2)}</p>
+                <p>Total Hidratos: ${totalHidratos.toFixed(2)}g</p>
+            `;
+
+            registros.push({
+                nombre,
+                cantidad,
+                proteinas: totalProteinas.toFixed(2),
+                grasas: totalGrasas.toFixed(2),
+                hidratos: totalHidratos.toFixed(2),
+                ugp: ugp.toFixed(2),
+                timestamp: new Date().toLocaleString()
+            });
+
+            guardarRegistros();
+            actualizarRegistros();
+        }
+
+        function guardarRegistros() {
+            localStorage.setItem('registros', JSON.stringify(registros));
+        }
+
+        function cargarRegistros() {
+            const savedRegistros = localStorage.getItem('registros');
+            if (savedRegistros) {
+                registros = JSON.parse(savedRegistros);
+                actualizarRegistros();
+            }
+        }
+
+        function actualizarRegistros() {
+            const registrosDiv = document.getElementById('registros');
+            registrosDiv.innerHTML = '';
+            registros.forEach((registro, index) => {
+                const registroDiv = document.createElement('div');
+                registroDiv.className = 'record';
+                registroDiv.innerHTML = `
+                    <span onclick="mostrarDetalles(${index})"><strong>${registro.nombre}</strong></span>
+                    <div class="actions">
+                        <i onclick="modificarRegistro(${index})">Modificar</i>
+                        <i onclick="confirmarBorradoRegistro(${index})">Borrar</i>
+                    </div>
+                    <div id="detallesRegistro${index}" style="display:none;">
+                        <h3>Detalles del Registro</h3>
+                        <p>Nombre: ${registro.nombre}</p>
+                        <p>Cantidad: ${registro.cantidad}</p>
+                        <p>Proteínas: ${registro.proteinas}</p>
+                        <p>Grasas: ${registro.grasas}</p>
+                        <p>Hidratos: ${registro.hidratos}</p>
+                        <p>UGP: ${registro.ugp}</p>
+                    </div>
+                `;
+                registrosDiv.appendChild(registroDiv);
+            });
+        }
+
+        function mostrarDetalles(index) {
+            const detallesRegistro = document.getElementById(`detallesRegistro${index}`);
+            detallesRegistro.style.display = detallesRegistro.style.display === 'block' ? 'none' : 'block';
+
+            // Obtener el contenedor del registro y ocultar los botones de modificar y borrar
+            const registroDiv = detallesRegistro.parentElement;
+            const accionesRegistro = registroDiv.querySelector('.actions');
+            accionesRegistro.style.visibility = detallesRegistro.style.display === 'block' ? 'hidden' : 'visible';
+        }
+
+        function eliminarRegistro(index) {
+            registros.splice(index, 1);
+            guardarRegistros();
+            actualizarRegistros();
+        }
+
+        function confirmarBorradoRegistro(index) {
+            if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+                eliminarRegistro(index);
+            }
+        }
+
+        function modificarRegistro(index) {
+            const registro = registros[index];
+            document.getElementById('nombre').value = registro.nombre;
+
+            // Obtener la cantidad total del registro
+            const cantidadTotal = parseFloat(registro.cantidad);
+            const proteinasTotal = parseFloat(registro.proteinas);
+            const grasasTotal = parseFloat(registro.grasas);
+            const hidratosTotal = parseFloat(registro.hidratos);
+
+            // Calcular los valores para 100g
+            const proteinasPor100g = (proteinasTotal / cantidadTotal) * 100;
+            const grasasPor100g = (grasasTotal / cantidadTotal) * 100;
+            const hidratosPor100g = (hidratosTotal / cantidadTotal) * 100;
+
+            document.getElementById('cantidad').value = 100; // Fijar la cantidad a 100g
+
+            document.getElementById('proteinas').value = proteinasPor100g.toFixed(2);
+            document.getElementById('grasas').value = grasasPor100g.toFixed(2);
+            document.getElementById('hidratos').value = hidratosPor100g.toFixed(2);
+        }
+    </script>
+</body>
+
+</html>
