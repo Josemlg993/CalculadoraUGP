@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Calculadora UGP</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c82e0">
+
     <style>
         body { font-family: Arial, sans-serif; background: #f8fafd; margin:0; }
         .container { max-width: 900px; margin: 2em auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 2px 2px 15px #bbb; }
@@ -221,6 +224,9 @@ function calcularSeleccionados() {
 }
 
 mostrarTabla();
+   if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+} 
 </script>
 </body>
 </html>
