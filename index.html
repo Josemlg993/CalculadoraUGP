@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora UGP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8fafd; margin:0; }
+        .container { max-width: 900px; margin: 2em auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 2px 2px 15px #bbb; }
+        form { display: flex; flex-wrap: wrap; gap: 0.5em;}
+        input[type="text"], input[type="number"] { 
+            padding: 5px; border-radius: 4px; border: 1px solid #bbb; font-size: 1em; flex:1 1 120px; min-width: 85px;
+        }
+        .btn { background: #2c82e0; color: #fff; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; min-width:80px; }
+        .btn-del { background: #e02c2c; }
+        .tabla-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1em; min-width: 700px;}
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center;}
+        th { background: #e7f2fa; }
+        tfoot th { background: #d1e7fa; font-weight: bold; }
+        input[type="number"] { width: 65px; }
+
+        @media (max-width: 900px) {
+            .container { padding: 0.6em;}
+            input[type="text"], input[type="number"] { font-size: 0.95em; min-width: 75px;}
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 0.5em;}
+            table, th, td { font-size: 12px; }
+            th, td { padding: 4px;}
+            input[type="text"], input[type="number"] { font-size: 0.92em; min-width:55px;}
+            .btn, .btn-del { font-size:0.9em; padding: 4px 7px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Calculadora UGP</h2>
+    <form id="form-alimento" autocomplete="off">
+        <input type="text" id="nombre" placeholder="Nombre alimento" required>
+        <input type="number" id="cantidad" placeholder="Cantidad (g)" min="0" required>
+        <input type="number" id="grasa" placeholder="Grasa (g)" min="0" required>
+        <input type="number" id="proteina" placeholder="Proteína (g)" min="0" required>
+        <input type="number" id="hidratos" placeholder="Hidratos (g)" min="0" required>
+        <button type="submit" class="btn">Añadir</button>
+    </form>
+    <div class="tabla-responsive">
+        <table id="tabla-alimentos">
+            <thead>
+                <tr>
+                    <th>Alimento</th>
+                    <th>Cantidad (g)</th>
+                    <th>Grasa (g)</th>
+                    <th>Proteína (g)</th>
+                    <th>Hidratos (g)</th>
+                    <th>UGP</th>
+                    <th>HC+UGP</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <th>Total</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th id="total-hc"></th>
+                    <th id="total-ugp"></th>
+                    <th id="total-hcugp"></th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+<script>
+let indiceEditando = null;
+
+function cargarAlimentos() {
+    const datos = localStorage.getItem('alimentosUGP');
+    return datos ? JSON.parse(datos) : [];
+}
+
+function guardarAlimentos(alimentos) {
+    localStorage.setItem('alimentosUGP', JSON.stringify(alimentos));
+}
+
+function calcularUGP(grasa, proteina) {
+    return ((grasa * 9) + (proteina * 4)) / 150;
+}
+
+function mostrarTabla() {
+    const alimentos = cargarAlimentos();
+    const tbody = document.querySelector('#tabla-alimentos tbody');
+    let totalHC = 0, totalUGP = 0, totalHCUGP = 0;
+    tbody.innerHTML = '';
+    alimentos.forEach((al, idx) => {
+        const cantidadComida = al.cantidadComida || al.cantidad;
+        const ratio = cantidadComida / al.cantidad;
+        const grasaReal = (al.grasa * ratio).toFixed(2);
+        const proteinaReal = (al.proteina * ratio).toFixed(2);
+        const hidratosReal = (al.hidratos * ratio).toFixed(2);
+        const ugpReal = calcularUGP(al.grasa * ratio, al.proteina * ratio);
+        const hcugpReal = (parseFloat(hidratosReal) + ugpReal);
+        totalHC += parseFloat(hidratosReal);
+        totalUGP += ugpReal;
+        totalHCUGP += hcugpReal;
+
+        if (indiceEditando === idx) {
+            // Fila en modo edición
+            tbody.innerHTML += `
+                <tr>
+                    <td><input type="text" id="edit-nombre" value="${al.nombre}"></td>
+                    <td><input type="number" id="edit-cantidad" value="${al.cantidad}"></td>
+                    <td><input type="text" id="edit-grasa" value="${al.grasa}"></td>
+                    <td><input type="text" id="edit-proteina" value="${al.proteina}"></td>
+                    <td><input type="text" id="edit-hidratos" value="${al.hidratos}"></td>
+                    <td>${ugpReal.toFixed(2)}</td>
+                    <td>${hcugpReal.toFixed(2)}</td>
+                    <td>
+                        <button class="btn" onclick="guardarEdicion(${idx})">Guardar</button>
+                        <button class="btn btn-del" onclick="cancelarEdicion()">Cancelar</button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            // Fila normal
+            tbody.innerHTML += `
+                <tr>
+                    <td>${al.nombre}</td>
+                    <td>
+                        <input type="number" min="0" value="${cantidadComida}" 
+                            onchange="modificarCantidadComida(${idx}, this.value)">
+                        <span style="color:#888">(de ${al.cantidad}g)</span>
+                    </td>
+                    <td>${grasaReal}</td>
+                    <td>${proteinaReal}</td>
+                    <td>${hidratosReal}</td>
+                    <td>${ugpReal.toFixed(2)}</td>
+                    <td>${hcugpReal.toFixed(2)}</td>
+                    <td>
+                        <button class="btn" onclick="empezarEdicion(${idx})">Editar</button>
+                        <button class="btn btn-del" onclick="eliminarAlimento(${idx})">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    document.getElementById('total-hc').textContent = totalHC.toFixed(2);
+    document.getElementById('total-ugp').textContent = totalUGP.toFixed(2);
+    document.getElementById('total-hcugp').textContent = totalHCUGP.toFixed(2);
+}
+function empezarEdicion(idx) {
+    indiceEditando = idx;
+    mostrarTabla();
+}
+function cancelarEdicion() {
+    indiceEditando = null;
+    mostrarTabla();
+}
+function guardarEdicion(idx) {
+    function toNum(str) { return Number(String(str).replace(',', '.')); }
+    const alimentos = cargarAlimentos();
+    alimentos[idx].nombre = document.getElementById('edit-nombre').value;
+    alimentos[idx].cantidad = toNum(document.getElementById('edit-cantidad').value);
+    alimentos[idx].grasa = toNum(document.getElementById('edit-grasa').value);
+    alimentos[idx].proteina = toNum(document.getElementById('edit-proteina').value);
+    alimentos[idx].hidratos = toNum(document.getElementById('edit-hidratos').value);
+    guardarAlimentos(alimentos);
+    indiceEditando = null;
+    mostrarTabla();
+}
+window.empezarEdicion = empezarEdicion;
+window.cancelarEdicion = cancelarEdicion;
+window.guardarEdicion = guardarEdicion;
+
+
+function modificarCantidadComida(idx, nuevaCantidadComida) {
+    const alimentos = cargarAlimentos();
+    nuevaCantidadComida = Math.max(0, Number(String(nuevaCantidadComida).replace(',', '.')));
+    alimentos[idx].cantidadComida = nuevaCantidadComida;
+    guardarAlimentos(alimentos);
+    mostrarTabla();
+}
+
+window.modificarCantidadComida = modificarCantidadComida;
+
+function eliminarAlimento(idx) {
+    const alimentos = cargarAlimentos();
+    alimentos.splice(idx, 1);
+    guardarAlimentos(alimentos);
+    mostrarTabla();
+}
+
+document.getElementById('form-alimento').onsubmit = function (e) {
+    e.preventDefault();
+    function toNum(str) {
+        return Number(String(str).replace(',', '.'));
+    }
+    const nombre = document.getElementById('nombre').value;
+    const cantidad = toNum(document.getElementById('cantidad').value);
+    const grasa = toNum(document.getElementById('grasa').value);
+    const proteina = toNum(document.getElementById('proteina').value);
+    const hidratos = toNum(document.getElementById('hidratos').value);
+    const alimentos = cargarAlimentos();
+    alimentos.push({ nombre, cantidad, grasa, proteina, hidratos });
+    guardarAlimentos(alimentos);
+    mostrarTabla();
+    this.reset();
+};
+
+
+mostrarTabla();
+</script>
+</body>
+</html>
